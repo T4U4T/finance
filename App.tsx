@@ -53,6 +53,7 @@ import ReactMarkdown from 'react-markdown';
 import { AppState, Transaction, CreditCard as CardType, FamilyMember, FixedItem, TransactionType, PaymentMethod, CategoryItem, FinancialGoal, TransactionSplit } from './types';
 import { loadState, saveState, generateId } from './services/storage';
 import { getFinancialInsights } from './services/geminiService';
+import { getPaymentDate } from './services/financeUtils';
 import TransactionModal from './components/TransactionModal';
 
 // --- Constants & Styles ---
@@ -85,34 +86,6 @@ const ProgressBar = ({ current, max, color }: { current: number, max: number, co
       />
     </div>
   );
-};
-
-// --- Logic Helpers ---
-
-// Calculate the actual cash flow date for a credit card transaction
-const getPaymentDate = (t: Transaction, cards: CardType[]): Date => {
-  const date = new Date(t.date);
-  if(t.paymentMethod !== PaymentMethod.CREDIT_CARD || !t.cardId) return date;
-  
-  const card = cards.find(c => c.id === t.cardId);
-  if(!card) return date;
-
-  // Simple Logic: If transaction day > closingDay, it goes to next month's invoice.
-  // Then we set the day to dueDay.
-  
-  // Base Payment Date matches the Month/Year of transaction initially
-  let paymentDate = new Date(date.getFullYear(), date.getMonth(), card.dueDay);
-
-  // If the purchase was AFTER closing day, the invoice is for the NEXT month.
-  if (date.getDate() > card.closingDay) {
-     paymentDate.setMonth(paymentDate.getMonth() + 1);
-  }
-
-  if (card.dueDay < card.closingDay) {
-    paymentDate.setMonth(paymentDate.getMonth() + 1);
-  }
-
-  return paymentDate;
 };
 
 // --- Main App ---
